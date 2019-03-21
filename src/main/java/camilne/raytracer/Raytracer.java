@@ -68,23 +68,27 @@ public class Raytracer {
         final var surface = result.getObject().getSurface(result.getHitPosition());
 
         final var finalColor = new Color();
-        for (final var light : scene.getLights()) {
-            finalColor.add(AMBIENT.mul(surface.getMaterial().getDiffuse(), new Color()));
+        finalColor.add(AMBIENT.mul(surface.getMaterial().getDiffuse(), new Color()));
 
-            final var lightDirection = light.getPosition().sub(result.getHitPosition(), new Vector3f()).normalize();
-            final var amountDiffuse = surface.getNormal().dot(lightDirection);
+        for (final var light : scene.getLights()) {
+            final var lightDirection = light.getPosition().sub(surface.getPosition(), new Vector3f()).normalize();
+            final var amountDiffuse = MathUtil.clamp(surface.getNormal().dot(lightDirection), 0, 1);
+
             if (amountDiffuse > 0) {
                 final var lightColor = getLightColor(surface.getPosition(), light, scene);
-                final var diffuse = surface.getMaterial().getDiffuse()
-                    .mul(amountDiffuse, new Color())
-                    .mul(lightColor);
+                final var diffuseColor = surface.getMaterial().getDiffuse().mul(amountDiffuse, new Color());
+                final var diffuse = diffuseColor.mul(lightColor);
                 finalColor.add(diffuse);
 
-                final var reflectedVec = lightDirection.reflect(surface.getNormal(), new Vector3f());
+                final var reflectedVec = lightDirection.reflect(surface.getNormal(), new Vector3f()).negate().normalize();
                 final var cameraDirection = camera.getPosition().sub(surface.getPosition(), new Vector3f()).normalize();
-                final var amountSpecular = (float) Math.pow(reflectedVec.dot(cameraDirection), surface.getMaterial().getShininess());
-                final var specular = lightColor.mul(amountSpecular, new Color());
-                finalColor.add(specular);
+                final var specularDot = MathUtil.clamp(reflectedVec.dot(cameraDirection), 0, 1);
+
+                if (specularDot > 0) {
+                    final var amountSpecular = (float) Math.pow(specularDot, surface.getMaterial().getShininess());
+                    final var specular = lightColor.mul(amountSpecular, new Color());
+                    finalColor.add(specular);
+                }
             }
         }
 
@@ -93,7 +97,7 @@ public class Raytracer {
 
     private Color getLightColor(Vector3fc point, Light light, Scene scene) {
         final var shadowRayDir = light.getPosition().sub(point, new Vector3f());
-        final var lightDistance = shadowRayDir.length();
+        final float lightDistance = shadowRayDir.length();
         final var shadowRay = new Ray(new Vector3f(point), shadowRayDir.normalize());
         final var hitResult = scene.getClosestObject(shadowRay);
 

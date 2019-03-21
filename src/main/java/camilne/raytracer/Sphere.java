@@ -58,7 +58,7 @@ public class Sphere extends SceneObject {
         final var normal = hitPos.sub(position, new Vector3f()).normalize();
         // Adjust the hit position by epsilon
         final var adjustedHitPos = new Vector3f();
-        hitPos.add(normal.mul(2e-5f, adjustedHitPos), adjustedHitPos);
+        hitPos.add(normal.mul(1e-5f, adjustedHitPos), adjustedHitPos);
         return new Surface(adjustedHitPos, normal, material);
     }
 
