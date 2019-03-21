@@ -4,6 +4,7 @@ import org.joml.Vector3f;
 import org.joml.Vector3fc;
 
 import java.awt.image.*;
+import java.util.ArrayList;
 
 public class Raytracer {
 
@@ -14,28 +15,44 @@ public class Raytracer {
     /**
      * Trace a scene and return the image.
      */
-    public BufferedImage trace(int width, int height, Scene scene) {
-        final var result = new BufferedImage(width, height, BufferedImage.TYPE_3BYTE_BGR);
+    public BufferedImage trace(RenderOptions options, Scene scene) {
+        final var result = new BufferedImage(options.width, options.height, BufferedImage.TYPE_INT_RGB);
 
         final var camera = new Camera(new Vector3f(3, 1.5f, 4));
         camera.focus(new Vector3f());
 
-        final var aspectRatio = (float) width / height;
+        final var aspectRatio = (float) options.width / options.height;
         final var scale = (float) Math.tan(FOV * Math.PI / 360);
 
-        for (var j = 0; j < height; j++) {
-            for (var i = 0; i < width; i++) {
-                final var x = (2 * (i + 0.5f) / width - 1) * aspectRatio * scale;
-                final var y = 1 - 2 * (j + 0.5f) / height * scale - 0.5f;
+        for (var j = 0; j < options.height; j++) {
+            for (var i = 0; i < options.width; i++) {
+                final var colors = new ArrayList<Color>();
+                final var gridSize = 1f / (options.aa + 1);
+                for (var aj = 0; aj < options.aa; aj++) {
+                    for (var ai = 0; ai < options.aa; ai++) {
+                        final var pixelX = i + gridSize * (ai + 0.5f + (float) Math.random());
+                        final var pixelY = j + gridSize * (aj + 0.5f + (float) Math.random());
 
-                final var origin = new Vector3f(camera.getPosition());
-                final var direction = new Vector3f(camera.getForward());
-                direction.add(camera.getRight().mul(x, new Vector3f()));
-                direction.add(camera.getUp().mul(y, new Vector3f()));
-                direction.normalize();
+                        final var x = (2f * pixelX / options.width - 1) * aspectRatio * scale;
+                        final var y = 1 - 2f * pixelY / options.height * scale - 0.5f;
 
-                final var ray = new Ray(origin, direction);
-                result.setRGB(i, j, cast(ray, scene, camera).toRGB());
+                        final var origin = new Vector3f(camera.getPosition());
+                        final var direction = new Vector3f(camera.getForward());
+                        direction.add(camera.getRight().mul(x, new Vector3f()));
+                        direction.add(camera.getUp().mul(y, new Vector3f()));
+                        direction.normalize();
+
+                        final var ray = new Ray(origin, direction);
+                        colors.add(cast(ray, scene, camera));
+                    }
+                }
+
+                final var finalColor = new Color();
+                for (final var color : colors) {
+                    finalColor.add(color);
+                }
+                finalColor.mul(1f / colors.size());
+                result.setRGB(i, j, finalColor.clamp().toRGB());
             }
         }
 
