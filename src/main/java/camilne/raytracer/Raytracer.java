@@ -1,13 +1,15 @@
 package camilne.raytracer;
 
 import org.joml.Vector3f;
+import org.joml.Vector3fc;
 
-import java.awt.*;
 import java.awt.image.*;
 
 public class Raytracer {
 
     private static final float FOV = 51.52f;
+    private static final Color BACKGROUND = new Color(0, 0, 0);
+    private static final Color AMBIENT = new Color(0.1f, 0.1f, 0.1f);
 
     /**
      * Trace a scene and return the image.
@@ -33,33 +35,54 @@ public class Raytracer {
                 direction.normalize();
 
                 final var ray = new Ray(origin, direction);
-                result.setRGB(i, j, cast(ray, scene, camera).getRGB());
+                result.setRGB(i, j, cast(ray, scene, camera).toRGB());
             }
         }
 
         return result;
     }
-    
+
     private Color cast(Ray ray, Scene scene, Camera camera) {
         final var result = scene.getClosestObject(ray);
         if (result.getObject() == null) {
-            return Color.BLACK;
+            return BACKGROUND;
         }
 
         final var surface = result.getObject().getSurface(result.getHitPosition());
-        final var direction = camera.getPosition().sub(result.getHitPosition(), new Vector3f()).normalize();
-        final var amountDiffuse = surface.getNormal().dot(direction);
 
-        if (amountDiffuse <= 0) {
-            return Color.DARK_GRAY;
+        final var finalColor = new Color();
+        for (final var light : scene.getLights()) {
+            final var lightDirection = light.getPosition().sub(result.getHitPosition(), new Vector3f()).normalize();
+            final var amountDiffuse = surface.getNormal().dot(lightDirection);
+            if (amountDiffuse > 0) {
+                final var lightColor = getLightColor(surface.getPosition(), light, scene);
+                final var diffuse = surface.getDiffuse()
+                    .mul(amountDiffuse, new Color())
+                    .mul(lightColor);
+                finalColor.add(diffuse);
+
+                final var reflectedVec = lightDirection.reflect(surface.getNormal(), new Vector3f());
+                final var cameraDirection = camera.getPosition().sub(surface.getPosition(), new Vector3f()).normalize();
+                final var amountSpecular = (float) Math.pow(reflectedVec.dot(cameraDirection), 10f);
+                final var specular = lightColor.mul(amountSpecular, new Color());
+                finalColor.add(specular);
+            }
         }
 
-        return multiplyColor(surface.getDiffuse(), amountDiffuse);
+        return finalColor.add(AMBIENT).clamp();
     }
 
-    private Color multiplyColor(Color color, float amount) {
-        amount /= 255f;
-        return new Color(color.getRed() * amount, color.getGreen() * amount, color.getBlue() * amount);
+    private Color getLightColor(Vector3fc point, Light light, Scene scene) {
+        final var shadowRayDir = light.getPosition().sub(point, new Vector3f());
+        final var lightDistance = shadowRayDir.length();
+        final var shadowRay = new Ray(new Vector3f(point), shadowRayDir.normalize());
+        final var hitResult = scene.getClosestObject(shadowRay);
+
+        if (hitResult.getT() < lightDistance) {
+            return new Color();
+        }
+
+        return light.getColor().mul(light.getPower() / lightDistance, new Color());
     }
 
 }

@@ -17,6 +17,7 @@ public class Main {
         final var raytracer = new Raytracer();
         final var scene = new Scene();
         scene.add(new Sphere(new Vector3f(), 1.5f));
+        scene.add(new Light(new Vector3f(-1, 4, 5), new Color(1, 1, 1), 2));
 
         final var startTime = System.nanoTime();
         final var result = raytracer.trace(IMAGE_WIDTH, IMAGE_HEIGHT, scene);

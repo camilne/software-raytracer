@@ -6,13 +6,19 @@ import java.util.List;
 public class Scene {
 
     private List<SceneObject> objects;
+    private List<Light> lights;
 
     public Scene() {
         this.objects = new ArrayList<>();
+        this.lights = new ArrayList<>();
     }
 
     public void add(SceneObject object) {
         this.objects.add(object);
+    }
+
+    public void add(Light light) {
+        this.lights.add(light);
     }
 
     public HitResult getClosestObject(Ray ray) {
@@ -29,5 +35,13 @@ public class Scene {
 
         final var hitPosition = ray.at(minT);
         return new HitResult(minObject, hitPosition, minT);
+    }
+
+    public List<SceneObject> getObjects() {
+        return objects;
+    }
+
+    public List<Light> getLights() {
+        return lights;
     }
 }

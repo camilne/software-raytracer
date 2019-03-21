@@ -3,8 +3,6 @@ package camilne.raytracer;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
 
-import java.awt.*;
-
 public class Surface {
 
     private final Vector3f position;

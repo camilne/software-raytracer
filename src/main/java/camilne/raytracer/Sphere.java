@@ -2,8 +2,6 @@ package camilne.raytracer;
 
 import org.joml.Vector3f;
 
-import java.awt.*;
-
 public class Sphere extends SceneObject {
 
     private final Vector3f position;
@@ -56,7 +54,10 @@ public class Sphere extends SceneObject {
     @Override
     public Surface getSurface(Vector3f hitPos) {
         final var normal = hitPos.sub(position, new Vector3f()).normalize();
-        return new Surface(hitPos, normal, Color.WHITE);
+        // Adjust the hit position by epsilon
+        final var adjustedHitPos = new Vector3f();
+        hitPos.add(normal.mul(1e-5f, adjustedHitPos), adjustedHitPos);
+        return new Surface(adjustedHitPos, normal, new Color(1f, 1f, 1f));
     }
 
     public Vector3f getPosition() {
