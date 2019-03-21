@@ -30,8 +30,8 @@ public class Raytracer {
                 final var gridSize = 1f / (options.aa + 1);
                 for (var aj = 0; aj < options.aa; aj++) {
                     for (var ai = 0; ai < options.aa; ai++) {
-                        final var pixelX = i + gridSize * (ai + 0.5f + (float) Math.random());
-                        final var pixelY = j + gridSize * (aj + 0.5f + (float) Math.random());
+                        final var pixelX = i + gridSize * (ai + 1);
+                        final var pixelY = j + gridSize * (aj + 1);
 
                         final var x = (2f * pixelX / options.width - 1) * aspectRatio * scale;
                         final var y = 1 - 2f * pixelY / options.height * scale - 0.5f;
