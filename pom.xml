@@ -10,7 +10,17 @@
 
   <properties>
     <java.version>1.11</java.version>
+
+    <joml.version>1.9.13</joml.version>
   </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.joml</groupId>
+      <artifactId>joml</artifactId>
+      <version>${joml.version}</version>
+    </dependency>
+  </dependencies>
 
   <build>
     <plugins>
