@@ -18,7 +18,7 @@ public class Raytracer {
     public BufferedImage trace(RenderOptions options, Scene scene) {
         final var result = new BufferedImage(options.width, options.height, BufferedImage.TYPE_INT_RGB);
 
-        final var camera = new Camera(new Vector3f(3, 1.5f, 4));
+        final var camera = new Camera(new Vector3f(6, 3, 8));
         camera.focus(new Vector3f());
 
         final var aspectRatio = (float) options.width / options.height;
@@ -69,24 +69,26 @@ public class Raytracer {
 
         final var finalColor = new Color();
         for (final var light : scene.getLights()) {
+            finalColor.add(AMBIENT.mul(surface.getMaterial().getDiffuse(), new Color()));
+
             final var lightDirection = light.getPosition().sub(result.getHitPosition(), new Vector3f()).normalize();
             final var amountDiffuse = surface.getNormal().dot(lightDirection);
             if (amountDiffuse > 0) {
                 final var lightColor = getLightColor(surface.getPosition(), light, scene);
-                final var diffuse = surface.getDiffuse()
+                final var diffuse = surface.getMaterial().getDiffuse()
                     .mul(amountDiffuse, new Color())
                     .mul(lightColor);
                 finalColor.add(diffuse);
 
                 final var reflectedVec = lightDirection.reflect(surface.getNormal(), new Vector3f());
                 final var cameraDirection = camera.getPosition().sub(surface.getPosition(), new Vector3f()).normalize();
-                final var amountSpecular = (float) Math.pow(reflectedVec.dot(cameraDirection), 10f);
+                final var amountSpecular = (float) Math.pow(reflectedVec.dot(cameraDirection), surface.getMaterial().getShininess());
                 final var specular = lightColor.mul(amountSpecular, new Color());
                 finalColor.add(specular);
             }
         }
 
-        return finalColor.add(AMBIENT).clamp();
+        return finalColor.clamp();
     }
 
     private Color getLightColor(Vector3fc point, Light light, Scene scene) {

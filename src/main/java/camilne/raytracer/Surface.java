@@ -7,12 +7,12 @@ public class Surface {
 
     private final Vector3f position;
     private final Vector3f normal;
-    private final Color diffuse;
+    private final Material material;
 
-    public Surface(Vector3f position, Vector3f normal, Color diffuse) {
+    public Surface(Vector3f position, Vector3f normal, Material material) {
         this.position = position;
         this.normal = normal;
-        this.diffuse = diffuse;
+        this.material = material;
     }
 
     public Vector3fc getPosition() {
@@ -23,7 +23,7 @@ public class Surface {
         return normal;
     }
 
-    public Color getDiffuse() {
-        return diffuse;
+    public Material getMaterial() {
+        return material;
     }
 }

@@ -7,11 +7,13 @@ public class Sphere extends SceneObject {
     private final Vector3f position;
     private final float radius;
     private final float radius2;
+    private final Material material;
 
-    public Sphere(final Vector3f position, float radius) {
+    public Sphere(final Vector3f position, float radius, Material material) {
         this.position = position;
         this.radius = radius;
         this.radius2 = radius * radius;
+        this.material = material;
     }
 
     @Override
@@ -56,8 +58,8 @@ public class Sphere extends SceneObject {
         final var normal = hitPos.sub(position, new Vector3f()).normalize();
         // Adjust the hit position by epsilon
         final var adjustedHitPos = new Vector3f();
-        hitPos.add(normal.mul(1e-5f, adjustedHitPos), adjustedHitPos);
-        return new Surface(adjustedHitPos, normal, new Color(1f, 1f, 1f));
+        hitPos.add(normal.mul(2e-5f, adjustedHitPos), adjustedHitPos);
+        return new Surface(adjustedHitPos, normal, material);
     }
 
     public Vector3f getPosition() {

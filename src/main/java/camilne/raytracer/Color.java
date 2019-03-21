@@ -39,6 +39,11 @@ public class Color {
         return this;
     }
 
+    public Color mul(Color other, Color dest) {
+        color.mul(other.color, dest.color);
+        return dest;
+    }
+
     public Color clamp() {
         color.x = Math.max(Math.min(color.x, 1), 0);
         color.y = Math.max(Math.min(color.y, 1), 0);
