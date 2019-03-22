@@ -24,7 +24,7 @@ public class Main {
         final var renderOptions = new RenderOptions();
         renderOptions.width = 1920;
         renderOptions.height = 1080;
-        renderOptions.aa = 2;
+        renderOptions.aa = 1;
 
         final var startTime = System.nanoTime();
         final var result = raytracer.trace(renderOptions, scene);
@@ -34,6 +34,8 @@ public class Main {
 
         final var resultFile = new File(IMAGE_PATH);
         ImageIO.write(result, IMAGE_FORMAT, resultFile);
+
+        System.out.println("Saved image as " + IMAGE_PATH);
     }
 
 }
