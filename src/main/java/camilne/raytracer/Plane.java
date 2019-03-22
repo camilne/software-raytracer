@@ -33,7 +33,7 @@ public class Plane extends SceneObject {
         final var adjustedHitPos = new Vector3f();
         hitPos.add(normal.mul(1e-5f, adjustedHitPos), adjustedHitPos);
 
-        if (isBlackTile(hitPos.x, hitPos.z)) {
+        if (isBlackTile(hitPos.x, hitPos.y, hitPos.z)) {
             return new Surface(adjustedHitPos, normal, new Material(
                 new Color(),
                 material.getShininess()
@@ -43,9 +43,11 @@ public class Plane extends SceneObject {
         return new Surface(adjustedHitPos, normal, material);
     }
 
-    private boolean isBlackTile(float x, float z) {
+    private boolean isBlackTile(float x, float y, float z) {
         final var scale = 2;
-        return (((int) Math.abs(Math.floor(x / scale)) % 2) ^ ((int) Math.abs(Math.floor(z / scale)) % 2)) == 0;
+        return (((int) Math.abs(Math.floor(x / scale)) % 2)
+            ^ ((int) Math.abs(Math.floor(y / scale)) % 2)
+            ^ ((int) Math.abs(Math.floor(z / scale)) % 2)) == 0;
     }
 
     public Vector3f getPoint() {

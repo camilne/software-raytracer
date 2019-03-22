@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit;
 public class Raytracer {
 
     private static final int NUM_THREADS = Runtime.getRuntime().availableProcessors();
-    private static final int MAX_DEPTH = 4;
+    private static final int MAX_DEPTH = 5;
     private static final float FOV = 51.52f;
     private static final Color BACKGROUND = new Color(0, 0, 0);
     private static final Color AMBIENT = new Color(0.1f, 0.1f, 0.1f);
@@ -95,8 +95,27 @@ public class Raytracer {
         final var surface = result.getObject().getSurface(result.getHitPosition());
 
         final var finalColor = getPhongColor(scene, camera, surface);
-        if (surface.getMaterial().isReflective() && depth < MAX_DEPTH) {
-            finalColor.add(getReflectedColor(ray, surface, scene, camera, depth));
+        if ((surface.getMaterial().isReflective() || surface.getMaterial().isTransparent()) && depth < MAX_DEPTH) {
+            // Calculate the reflected color.
+            final var reflectedColor = new Color();
+            if (surface.getMaterial().isReflective()) {
+                reflectedColor.add(getReflectedColor(ray, surface, scene, camera, depth));
+            }
+
+            // Calculate the refracted color.
+            final var refractedColor = new Color();
+            final var ior = 1.1f;
+            final var fresnel = computeFresnel(ray.getDirection(), surface.getNormal(), ior);
+            if (surface.getMaterial().isTransparent() && fresnel < 1) {
+                refractedColor.add(getRefractedColor(ray, surface, ior, scene, camera, depth));
+            }
+
+            // Mix the reflection and refraction together.
+            if (surface.getMaterial().isReflective() && surface.getMaterial().isTransparent()) {
+                finalColor.add(reflectedColor.mul(fresnel).add(refractedColor.mul(1 - fresnel)));
+            } else {
+                finalColor.add(reflectedColor).add(refractedColor);
+            }
         }
 
         return finalColor.clamp();
@@ -133,9 +152,75 @@ public class Raytracer {
 
     private Color getReflectedColor(Ray ray, Surface surface, Scene scene, Camera camera, int depth) {
         final var reflectedDir = ray.getDirection().reflect(surface.getNormal(), new Vector3f());
-        final var newRay = new Ray(new Vector3f(surface.getPosition()), reflectedDir);
-        final var tracedColor = trace(newRay, scene, camera, depth + 1);
-        return tracedColor.mul(surface.getMaterial().getDiffuse());
+        final var outside = (ray.getDirection().dot(surface.getNormal()) < 0);
+        final var origin = new Vector3f(surface.getPosition());
+        if (!outside) {
+            origin.sub(surface.getNormal().mul(2e-4f, new Vector3f()), origin);
+        }
+
+        final var newRay = new Ray(origin, reflectedDir);
+        return trace(newRay, scene, camera, depth + 1);
+    }
+
+    private Color getRefractedColor(Ray ray, Surface surface, float ior, Scene scene, Camera camera, int depth) {
+        final var refractedDir = refract(ray.getDirection(), surface.getNormal(), ior).normalize();
+        final var outside = (ray.getDirection().dot(surface.getNormal()) < 0);
+        final var origin = new Vector3f(surface.getPosition());
+        if (outside) {
+            origin.sub(surface.getNormal().mul(2e-4f, new Vector3f()), origin);
+        }
+
+        final var newRay = new Ray(origin, refractedDir);
+        return trace(newRay, scene, camera, depth + 1);
+    }
+
+    private Vector3f refract(Vector3fc incoming, Vector3fc normal, float ior) {
+        float cosi = MathUtil.clamp(incoming.dot(normal), -1, 1);
+        float etai = 1f;
+        float etat = ior;
+        final var newNormal = new Vector3f(normal);
+        if (cosi < 0) {
+            cosi = -cosi;
+        }
+        else {
+            final var tmp = etai;
+            etai = etat;
+            etat = tmp;
+            newNormal.negate();
+        }
+
+        final float eta = etai / etat;
+        final float k = 1 - eta * eta * (1 - cosi * cosi);
+
+        if (k < 0) {
+            return new Vector3f();
+        }
+        return incoming.mul(eta, new Vector3f()).add(newNormal.mul((eta * cosi - (float) Math.sqrt(k))));
+    }
+
+    private float computeFresnel(Vector3fc incoming, Vector3fc normal, float ior) {
+        float cosi = MathUtil.clamp(incoming.dot(normal), -1, 1);
+        float etai = 1f;
+        float etat = ior;
+        if (cosi > 0) {
+            final var tmp = etai;
+            etai = etat;
+            etat = tmp;
+        }
+
+        final float sint = etai / etat * (float) Math.sqrt(Math.max(0, 1 - cosi * cosi));
+
+        // Total internal reflection
+        if (sint >= 1) {
+            return 1;
+        }
+        else {
+            final var cost = (float) Math.sqrt(Math.max(0, 1 - sint * sint));
+            cosi = Math.abs(cosi);
+            final var rS = ((etat * cosi) - (etai * cost)) / ((etat * cosi) + (etai * cost));
+            final var rP = ((etai * cosi) - (etat * cost)) / ((etai * cosi) + (etat * cost));
+            return (rS * rS + rP * rP) / 2f;
+        }
     }
 
     private Color getLightColor(Vector3fc point, Light light, Scene scene) {
