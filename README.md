@@ -6,6 +6,7 @@ This is a software raytracer written in Java. The goal is to learn and understan
 Current capabilities:
 - Spheres/Planes
 - Phong shading (how exciting!)
+- Reflection/Refraction
 - MSAA
 
 Libraries
@@ -16,4 +17,5 @@ Libraries
 Renders
 -------
 
+![spheres reflecting and refracting](images/spheres_reflect_refract.png)
 ![2 spheres](images/2_spheres.png)
