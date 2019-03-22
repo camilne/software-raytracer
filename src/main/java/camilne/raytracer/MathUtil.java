@@ -12,4 +12,8 @@ public class MathUtil {
         return value;
     }
 
+    public static float mix(float a, float b, float t) {
+        return a * t + b * (1 - t);
+    }
+
 }

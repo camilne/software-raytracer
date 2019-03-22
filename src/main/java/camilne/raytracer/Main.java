@@ -15,7 +15,10 @@ public class Main {
         final var raytracer = new Raytracer();
         final var scene = new Scene();
         scene.add(new Sphere(new Vector3f(), 1.5f, new Material(new Color(0.3f, 0.7f, 0.9f), 10f)));
-        scene.add(new Sphere(new Vector3f(2, -2, -5), 2.5f, new Material(new Color(1f, 1f, 0.3f), 100f)));
+        scene.add(new Sphere(new Vector3f(2, -2, -5), 2.5f,
+            new Material(new Color(1f, 1f, 0.3f), 100f, true)));
+        scene.add(new Sphere(new Vector3f(-5, -2, 1), 2f,
+            new Material(new Color(1f, 0.3f, 1f), 200f, true)));
         scene.add(new Plane(new Vector3f(0, -5, 0), new Vector3f(0, 1, 0),
             new Material(new Color(1, 1, 1), 1f)));
         scene.add(new Light(new Vector3f(-1, 4, 5), new Color(0.6f, 1f, 0.7f), 3));

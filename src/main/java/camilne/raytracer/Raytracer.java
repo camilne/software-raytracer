@@ -12,6 +12,7 @@ import java.util.concurrent.TimeUnit;
 public class Raytracer {
 
     private static final int NUM_THREADS = Runtime.getRuntime().availableProcessors();
+    private static final int MAX_DEPTH = 4;
     private static final float FOV = 51.52f;
     private static final Color BACKGROUND = new Color(0, 0, 0);
     private static final Color AMBIENT = new Color(0.1f, 0.1f, 0.1f);
@@ -72,7 +73,7 @@ public class Raytracer {
                     direction.normalize();
 
                     final var ray = new Ray(origin, direction);
-                    colors.add(cast(ray, scene, camera));
+                    colors.add(trace(ray, scene, camera, 0));
                 }
             }
 
@@ -85,7 +86,7 @@ public class Raytracer {
         });
     }
 
-    private Color cast(Ray ray, Scene scene, Camera camera) {
+    private Color trace(Ray ray, Scene scene, Camera camera, int depth) {
         final var result = scene.getClosestObject(ray);
         if (result.getObject() == null) {
             return BACKGROUND;
@@ -93,6 +94,15 @@ public class Raytracer {
 
         final var surface = result.getObject().getSurface(result.getHitPosition());
 
+        final var finalColor = getPhongColor(scene, camera, surface);
+        if (surface.getMaterial().isReflective() && depth < MAX_DEPTH) {
+            finalColor.add(getReflectedColor(ray, surface, scene, camera, depth));
+        }
+
+        return finalColor.clamp();
+    }
+
+    private Color getPhongColor(final Scene scene, final Camera camera, final Surface surface) {
         final var finalColor = new Color();
         finalColor.add(AMBIENT.mul(surface.getMaterial().getDiffuse(), new Color()));
 
@@ -118,8 +128,14 @@ public class Raytracer {
                 }
             }
         }
+        return finalColor;
+    }
 
-        return finalColor.clamp();
+    private Color getReflectedColor(Ray ray, Surface surface, Scene scene, Camera camera, int depth) {
+        final var reflectedDir = ray.getDirection().reflect(surface.getNormal(), new Vector3f());
+        final var newRay = new Ray(new Vector3f(surface.getPosition()), reflectedDir);
+        final var tracedColor = trace(newRay, scene, camera, depth + 1);
+        return tracedColor.mul(surface.getMaterial().getDiffuse());
     }
 
     private Color getLightColor(Vector3fc point, Light light, Scene scene) {
