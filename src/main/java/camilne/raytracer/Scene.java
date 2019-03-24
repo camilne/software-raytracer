@@ -1,5 +1,7 @@
 package camilne.raytracer;
 
+import org.joml.Vector3f;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,6 +30,22 @@ public class Scene {
         for (final var object : objects) {
             final var objectT = object.hit(ray);
             if (objectT >= 0 && objectT < minT) {
+                minT = objectT;
+                minObject = object;
+            }
+        }
+
+        final var hitPosition = ray.at(minT);
+        return new HitResult(minObject, hitPosition, minT);
+    }
+
+    public HitResult getClosestOpaqueObject(Ray ray) {
+        SceneObject minObject = null;
+        var minT = Float.POSITIVE_INFINITY;
+
+        for (final var object : objects) {
+            final var objectT = object.hit(ray);
+            if (objectT >= 0 && objectT < minT && !object.getSurface(new Vector3f()).getMaterial().isTransparent()) {
                 minT = objectT;
                 minObject = object;
             }

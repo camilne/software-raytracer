@@ -16,6 +16,7 @@ public class Raytracer {
     private static final float FOV = 51.52f;
     private static final Color BACKGROUND = new Color(0, 0, 0);
     private static final Color AMBIENT = new Color(0.03f, 0.03f, 0.03f);
+    private static final int NUM_SHADOW_SAMPLES = 64;
 
     private ExecutorService executors;
 
@@ -132,7 +133,7 @@ public class Raytracer {
             final var amountDiffuse = MathUtil.clamp(surface.getNormal().dot(lightDirection), 0, 1);
 
             if (amountDiffuse > 0) {
-                final var lightColor = getLightColor(surface.getPosition(), light, scene);
+                final var lightColor = getSoftLightColor(surface.getPosition(), light, scene);
                 final var diffuseColor = surface.getMaterial().getDiffuse().mul(amountDiffuse, new Color());
                 final var diffuse = diffuseColor.mul(lightColor);
                 finalColor.add(diffuse);
@@ -226,16 +227,33 @@ public class Raytracer {
     }
 
     private Color getLightColor(Vector3fc point, Light light, Scene scene) {
-        final var shadowRayDir = light.getPosition().sub(point, new Vector3f());
-        final float lightDistance = shadowRayDir.length();
-        final var shadowRay = new Ray(new Vector3f(point), shadowRayDir.normalize());
-        final var hitResult = scene.getClosestObject(shadowRay);
+            final var shadowRayDir = light.getPosition().sub(point, new Vector3f());
+            final float lightDistance = shadowRayDir.length();
+            final var shadowRay = new Ray(new Vector3f(point), shadowRayDir.normalize());
+            final var hitResult = scene.getClosestOpaqueObject(shadowRay);
 
-        if (hitResult.getT() < lightDistance) {
-            return new Color();
+            if (hitResult.getT() < lightDistance) {
+                return getSoftLightColor(point, light, scene);
+            }
+
+            return light.getColor().mul(light.getPower() / lightDistance, new Color());
+    }
+
+    private Color getSoftLightColor(Vector3fc point, Light light, Scene scene) {
+        final var finalColor = new Color();
+        for (var i = 0; i < NUM_SHADOW_SAMPLES; i++) {
+            final var shadowRayDir = light.getRandomPosition().sub(point);
+            final float lightDistance = shadowRayDir.length();
+            final var shadowRay = new Ray(new Vector3f(point), shadowRayDir.normalize());
+            final var hitResult = scene.getClosestOpaqueObject(shadowRay);
+
+            if (hitResult.getT() < lightDistance) {
+                continue;
+            }
+
+            finalColor.add(light.getColor().mul(light.getPower() / lightDistance, new Color()));
         }
-
-        return light.getColor().mul(light.getPower() / lightDistance, new Color());
+        return finalColor.mul(1f / NUM_SHADOW_SAMPLES);
     }
 
 }
