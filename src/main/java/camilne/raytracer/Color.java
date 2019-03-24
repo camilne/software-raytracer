@@ -65,7 +65,12 @@ public class Color {
 
     public int toRGB() {
         clamp();
-        return new java.awt.Color(color.x, color.y, color.z).getRGB();
+        return new java.awt.Color(correct(color.x), correct(color.y), correct(color.z)).getRGB();
+    }
+
+    private float correct(float color) {
+        return color;
+        //return (float) Math.pow(color, 1 / 2.2);
     }
 
 }

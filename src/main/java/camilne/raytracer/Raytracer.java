@@ -12,10 +12,10 @@ import java.util.concurrent.TimeUnit;
 public class Raytracer {
 
     private static final int NUM_THREADS = Runtime.getRuntime().availableProcessors();
-    private static final int MAX_DEPTH = 5;
+    private static final int MAX_DEPTH = 4;
     private static final float FOV = 51.52f;
     private static final Color BACKGROUND = new Color(0, 0, 0);
-    private static final Color AMBIENT = new Color(0.1f, 0.1f, 0.1f);
+    private static final Color AMBIENT = new Color(0.03f, 0.03f, 0.03f);
 
     private ExecutorService executors;
 
@@ -93,8 +93,7 @@ public class Raytracer {
         }
 
         final var surface = result.getObject().getSurface(result.getHitPosition());
-
-        final var finalColor = getPhongColor(scene, camera, surface);
+        final Color finalColor = new Color();
         if ((surface.getMaterial().isReflective() || surface.getMaterial().isTransparent()) && depth < MAX_DEPTH) {
             // Calculate the reflected color.
             final var reflectedColor = new Color();
@@ -113,9 +112,12 @@ public class Raytracer {
             // Mix the reflection and refraction together.
             if (surface.getMaterial().isReflective() && surface.getMaterial().isTransparent()) {
                 finalColor.add(reflectedColor.mul(fresnel).add(refractedColor.mul(1 - fresnel)));
-            } else {
+            }
+            else {
                 finalColor.add(reflectedColor).add(refractedColor);
             }
+        } else {
+            finalColor.add(getPhongColor(scene, camera, surface));
         }
 
         return finalColor.clamp();
@@ -159,7 +161,7 @@ public class Raytracer {
         }
 
         final var newRay = new Ray(origin, reflectedDir);
-        return trace(newRay, scene, camera, depth + 1);
+        return trace(newRay, scene, camera, depth + 1).mul(surface.getMaterial().getDiffuse());
     }
 
     private Color getRefractedColor(Ray ray, Surface surface, float ior, Scene scene, Camera camera, int depth) {
@@ -171,7 +173,7 @@ public class Raytracer {
         }
 
         final var newRay = new Ray(origin, refractedDir);
-        return trace(newRay, scene, camera, depth + 1);
+        return trace(newRay, scene, camera, depth + 1).mul(surface.getMaterial().getDiffuse());
     }
 
     private Vector3f refract(Vector3fc incoming, Vector3fc normal, float ior) {
