@@ -38,16 +38,10 @@
         </rowConstraints>
          <children>
             <Button fx:id="renderButton" maxWidth="1.7976931348623157E308" mnemonicParsing="false" onAction="#onRenderPressed" text="Render" GridPane.columnSpan="2147483647" GridPane.rowIndex="9" />
-            <Slider fx:id="aaSlider" majorTickUnit="5.0" max="16.0" min="1.0" minorTickCount="1" showTickLabels="true" showTickMarks="true" snapToTicks="true" value="1.0" GridPane.columnIndex="1" GridPane.rowIndex="8" />
+            <Slider fx:id="aaSlider" majorTickUnit="5.0" max="16.0" min="1.0" minorTickCount="1" showTickLabels="true" showTickMarks="true" snapToTicks="true" value="1.0" GridPane.columnIndex="1" GridPane.rowIndex="2" />
             <Label text="Width" />
             <Label text="Height" GridPane.rowIndex="1" />
-            <Label text="Label" GridPane.rowIndex="2" />
-            <Label text="Label" GridPane.rowIndex="3" />
-            <Label text="Label" GridPane.rowIndex="4" />
-            <Label text="Label" GridPane.rowIndex="5" />
-            <Label text="Label" GridPane.rowIndex="6" />
-            <Label text="Label" GridPane.rowIndex="7" />
-            <Label text="Anti Aliasing" GridPane.rowIndex="8" />
+            <Label text="Anti Aliasing" GridPane.rowIndex="2" />
             <TextField fx:id="widthInput" text="512" GridPane.columnIndex="1" />
             <TextField fx:id="heightInput" text="512" GridPane.columnIndex="1" GridPane.rowIndex="1" />
          </children>
@@ -62,16 +56,6 @@
           <Menu mnemonicParsing="false" text="File">
             <items>
               <MenuItem mnemonicParsing="false" text="Close" />
-            </items>
-          </Menu>
-          <Menu mnemonicParsing="false" text="Edit">
-            <items>
-              <MenuItem mnemonicParsing="false" text="Delete" />
-            </items>
-          </Menu>
-          <Menu mnemonicParsing="false" text="Help">
-            <items>
-              <MenuItem mnemonicParsing="false" text="About" />
             </items>
           </Menu>
         </menus>

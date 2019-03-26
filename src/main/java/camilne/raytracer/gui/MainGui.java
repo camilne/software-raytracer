@@ -10,12 +10,17 @@ public class MainGui extends Application {
 
     @Override
     public void start(Stage stage) throws Exception {
-        Parent root = FXMLLoader.load(getClass().getResource("/fxml/Main.fxml"));
+        final var loader = new FXMLLoader(getClass().getResource("/fxml/Main.fxml"));
+        Parent root = loader.load();
 
-        Scene scene = new Scene(root);
+        final var scene = new Scene(root);
 
-        stage.setTitle("JavaFX");
+        stage.setTitle("Java Ray Tracer");
         stage.setScene(scene);
+
+        final var controller = (MainController)loader.getController();
+        stage.setOnCloseRequest((e) -> controller.shutdown());
+
         stage.show();
     }
 

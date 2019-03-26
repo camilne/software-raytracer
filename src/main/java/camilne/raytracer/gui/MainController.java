@@ -13,6 +13,11 @@ import java.util.function.UnaryOperator;
 @SuppressWarnings("Duplicates")
 public class MainController {
 
+    private static final int MIN_WIDTH = 1;
+    private static final int MAX_WIDTH = 3840;
+    private static final int MIN_HEIGHT = 1;
+    private static final int MAX_HEIGHT = 2160;
+
     @FXML
     private TextField widthInput;
     @FXML
@@ -24,6 +29,12 @@ public class MainController {
 
     @FXML
     private ImageView targetView;
+
+    private Raytracer raytracer;
+
+    public MainController() {
+        raytracer = new Raytracer();
+    }
 
     @FXML
     public void initialize() {
@@ -39,6 +50,10 @@ public class MainController {
         heightInput.setTextFormatter(new TextFormatter<>(new IntegerStringConverter(), 0, integerFilter));
     }
 
+    public void shutdown() {
+        raytracer.cancel();
+    }
+
     @FXML
     private void onRenderPressed() {
         try {
@@ -50,8 +65,6 @@ public class MainController {
             alert.setContentText(e.getMessage());
             return;
         }
-
-        final var raytracer = new Raytracer();
 
         final var camera = new Camera(new Vector3f(6, 3, 8));
         camera.focus(new Vector3f());
@@ -76,8 +89,8 @@ public class MainController {
         scene.add(new Light(new Vector3f(14, 10, 6), new Color(1f, 1f, 1f), 3f, 0.1f));
         scene.add(new Light(new Vector3f(0, 100000, 0), new Color(1f, 1f, 1f), 60000f, 3000f));
 
-        final var targetWidth = MathUtil.clamp(Integer.parseInt(widthInput.getText()), 1, 3840);
-        final var targetHeight = MathUtil.clamp(Integer.parseInt(heightInput.getText()), 1, 2160);
+        final var targetWidth = Integer.parseInt(widthInput.getText());
+        final var targetHeight = Integer.parseInt(heightInput.getText());
         final var target = new RenderableJavaFxImage(targetWidth, targetHeight);
         targetView.setImage(target);
 
@@ -98,8 +111,10 @@ public class MainController {
 
     private void validateInput() throws InvalidInputException {
         try {
-            Integer.parseInt(widthInput.getText());
-            Integer.parseInt(heightInput.getText());
+            final var width = Integer.parseInt(widthInput.getText());
+            widthInput.setText(String.valueOf(MathUtil.clamp(width, MIN_WIDTH, MAX_WIDTH)));
+            final var height = Integer.parseInt(heightInput.getText());
+            heightInput.setText(String.valueOf(MathUtil.clamp(height, MIN_HEIGHT, MAX_HEIGHT)));
         } catch (NumberFormatException e) {
             throw new InvalidInputException("Either width or height is not a valid integer");
         }

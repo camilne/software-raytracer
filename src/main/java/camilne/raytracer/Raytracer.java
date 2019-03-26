@@ -51,6 +51,10 @@ public class Raytracer {
         return options.target;
     }
 
+    public void cancel() {
+        executors.shutdownNow();
+    }
+
     private void submit(int j, float aspectRatio, float scale, RenderOptions options) {
         executors.submit(() -> {
             final var rowColors = new Color[options.width];
