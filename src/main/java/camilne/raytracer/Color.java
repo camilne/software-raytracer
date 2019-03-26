@@ -51,6 +51,13 @@ public class Color {
         return this;
     }
 
+    public Color clamp(Color dest) {
+        dest.color.x = Math.max(Math.min(color.x, 1), 0);
+        dest.color.y = Math.max(Math.min(color.y, 1), 0);
+        dest.color.z = Math.max(Math.min(color.z, 1), 0);
+        return dest;
+    }
+
     public float r() {
         return color.x;
     }
@@ -64,8 +71,18 @@ public class Color {
     }
 
     public int toRGB() {
-        clamp();
-        return new java.awt.Color(correct(color.x), correct(color.y), correct(color.z)).getRGB();
+        final var color = clamp(new Color()).color;
+        int result = 0;
+        result |= (int)(correct(color.x) * 255) << 16;
+        result |= (int)(correct(color.y) * 255) << 8;
+        result |= (int)(correct(color.z) * 255);
+        return result;
+    }
+
+    public int toARGB() {
+        int result = 255 << 24;
+        result |= toRGB();
+        return result;
     }
 
     private float correct(float color) {

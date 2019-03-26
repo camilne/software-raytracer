@@ -3,6 +3,7 @@ package camilne.raytracer;
 import org.joml.Vector3f;
 
 import javax.imageio.ImageIO;
+import java.awt.image.*;
 import java.io.File;
 import java.io.IOException;
 
@@ -13,6 +14,10 @@ public class Main {
 
     public static void main(String[] args) throws IOException {
         final var raytracer = new Raytracer();
+
+        final var camera = new Camera(new Vector3f(6, 3, 8));
+        camera.focus(new Vector3f());
+
         final var scene = new Scene();
 
         scene.add(new Sphere(new Vector3f(-1, -1, -1), 1.5f,
@@ -37,13 +42,13 @@ public class Main {
         scene.add(new Light(new Vector3f(14, 10, 6), new Color(1f, 1f, 1f), 3f, 0.1f));
         scene.add(new Light(new Vector3f(0, 100000, 0), new Color(1f, 1f, 1f), 60000f, 3000f));
 
-        final var renderOptions = new RenderOptions();
+        final var renderOptions = new RenderOptions(camera, scene);
         renderOptions.width = 1920;
         renderOptions.height = 1080;
         renderOptions.aa = 2;
 
         final var startTime = System.nanoTime();
-        final var result = raytracer.trace(renderOptions, scene);
+        final var result = (BufferedImage) raytracer.trace(renderOptions);
         final var endTime = System.nanoTime();
 
         System.out.printf("Render took %.3f seconds\n", (endTime - startTime) / 1e9);

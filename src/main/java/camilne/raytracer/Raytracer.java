@@ -27,19 +27,16 @@ public class Raytracer {
     /**
      * Trace a scene and return the image.
      */
-    public BufferedImage trace(RenderOptions options, Scene scene) {
-        final var result = new BufferedImage(options.width, options.height, BufferedImage.TYPE_INT_RGB);
-
-        final var camera = new Camera(new Vector3f(6, 3, 8));
-        camera.focus(new Vector3f());
+    public RenderableImage trace(RenderOptions options) {
+        if (options.target == null) {
+            options.target = new RenderableBufferedImage(options.width, options.height);
+        }
 
         final var aspectRatio = (float) options.width / options.height;
         final var scale = (float) Math.tan(FOV * Math.PI / 360);
 
         for (var j = 0; j < options.height; j++) {
-            for (var i = 0; i < options.width; i++) {
-                submit(i, j, aspectRatio, scale, camera, scene, options, result);
-            }
+            submit(j, aspectRatio, scale, options);
         }
 
         // Wait for the tasks to finish rendering.
@@ -51,39 +48,42 @@ public class Raytracer {
             e.printStackTrace();
         }
 
-        return result;
+        return options.target;
     }
 
-    private void submit(int i, int j, float aspectRatio, float scale, Camera camera, Scene scene,
-                        RenderOptions options, BufferedImage result) {
+    private void submit(int j, float aspectRatio, float scale, RenderOptions options) {
         executors.submit(() -> {
-            final var colors = new ArrayList<Color>();
-            final var gridSize = 1f / (options.aa + 1);
-            for (var aj = 0; aj < options.aa; aj++) {
-                for (var ai = 0; ai < options.aa; ai++) {
-                    final var pixelX = i + gridSize * (ai + 1);
-                    final var pixelY = j + gridSize * (aj + 1);
+            final var rowColors = new Color[options.width];
+            for (var i = 0; i < options.width; i++) {
+                final var colors = new ArrayList<Color>();
+                final var gridSize = 1f / (options.aa + 1);
+                for (var aj = 0; aj < options.aa; aj++) {
+                    for (var ai = 0; ai < options.aa; ai++) {
+                        final var pixelX = i + gridSize * (ai + 1);
+                        final var pixelY = j + gridSize * (aj + 1);
 
-                    final var x = (2f * pixelX / options.width - 1) * aspectRatio * scale;
-                    final var y = 1 - 2f * pixelY / options.height * scale - 0.5f;
+                        final var x = (2f * pixelX / options.width - 1) * aspectRatio * scale;
+                        final var y = 1 - 2f * pixelY / options.height * scale - 0.5f;
 
-                    final var origin = new Vector3f(camera.getPosition());
-                    final var direction = new Vector3f(camera.getForward());
-                    direction.add(camera.getRight().mul(x, new Vector3f()));
-                    direction.add(camera.getUp().mul(y, new Vector3f()));
-                    direction.normalize();
+                        final var origin = new Vector3f(options.camera.getPosition());
+                        final var direction = new Vector3f(options.camera.getForward());
+                        direction.add(options.camera.getRight().mul(x, new Vector3f()));
+                        direction.add(options.camera.getUp().mul(y, new Vector3f()));
+                        direction.normalize();
 
-                    final var ray = new Ray(origin, direction);
-                    colors.add(trace(ray, scene, camera, 0));
+                        final var ray = new Ray(origin, direction);
+                        colors.add(trace(ray, options.scene, options.camera, 0));
+                    }
                 }
-            }
 
-            final var finalColor = new Color();
-            for (final var color : colors) {
-                finalColor.add(color);
+                final var finalColor = new Color();
+                for (final var color : colors) {
+                    finalColor.add(color);
+                }
+                finalColor.mul(1f / colors.size());
+                rowColors[i] = finalColor;
             }
-            finalColor.mul(1f / colors.size());
-            result.setRGB(i, j, finalColor.clamp().toRGB());
+            options.target.writeRegion(0, j, options.width, 1, rowColors);
         });
     }
 
