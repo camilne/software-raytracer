@@ -5,9 +5,10 @@ import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.image.ImageView;
-import javafx.util.converter.IntegerStringConverter;
+import javafx.stage.FileChooser;
 import org.joml.Vector3f;
 
+import java.io.IOException;
 import java.util.function.UnaryOperator;
 
 @SuppressWarnings("Duplicates")
@@ -18,6 +19,8 @@ public class MainController {
     private static final int MIN_HEIGHT = 1;
     private static final int MAX_HEIGHT = 2160;
 
+    @FXML
+    private MenuItem saveMenuItem;
     @FXML
     private TextField widthInput;
     @FXML
@@ -32,9 +35,12 @@ public class MainController {
 
     private Raytracer raytracer;
     private Thread raytracingThread;
+    private boolean isImageReady;
+    private RenderableJavaFxImage image;
 
     public MainController() {
         raytracer = new Raytracer();
+        isImageReady = false;
     }
 
     @FXML
@@ -56,6 +62,35 @@ public class MainController {
             raytracingThread.interrupt();
         }
         raytracer.cancel();
+    }
+
+    @FXML
+    private void onSave() {
+        if (!isImageReady || image == null) {
+            return;
+        }
+
+        final var fileChooser = new FileChooser();
+        fileChooser.setTitle("Save render");
+        fileChooser.setInitialFileName("render.png");
+
+        final var pngExtensionFilter = new FileChooser.ExtensionFilter("PNG Files (*.png)", "*.png");
+        fileChooser.getExtensionFilters().add(pngExtensionFilter);
+
+        final var stage = targetView.getScene().getWindow();
+        final var file = fileChooser.showSaveDialog(stage);
+        if (file != null) {
+            try {
+                image.save(file);
+            }
+            catch (IOException e) {
+                final var alert = new Alert(Alert.AlertType.ERROR);
+                alert.setTitle("Error");
+                alert.setHeaderText("Error saving image");
+                alert.setContentText(e.getMessage());
+                alert.showAndWait();
+            }
+        }
     }
 
     @FXML
@@ -96,19 +131,23 @@ public class MainController {
 
         final var targetWidth = Integer.parseInt(widthInput.getText());
         final var targetHeight = Integer.parseInt(heightInput.getText());
-        final var target = new RenderableJavaFxImage(targetWidth, targetHeight);
-        targetView.setImage(target);
+        image = new RenderableJavaFxImage(targetWidth, targetHeight);
+        targetView.setImage(image);
 
         final var renderOptions = new RenderOptions(camera, scene);
-        renderOptions.target = target;
+        renderOptions.target = image;
         renderOptions.width = targetWidth;
         renderOptions.height = targetHeight;
         renderOptions.aa = MathUtil.clamp((int) aaSlider.getValue(), 0, 16);
 
+        isImageReady = false;
+        saveMenuItem.setDisable(true);
         renderButton.setDisable(true);
         raytracingThread = new Thread(() -> {
             raytracer.trace(renderOptions);
             Platform.runLater(() -> {
+                isImageReady = true;
+                saveMenuItem.setDisable(false);
                 renderButton.setDisable(false);
             });
         });

@@ -1,6 +1,7 @@
 module raytracer {
     requires javafx.controls;
     requires javafx.fxml;
+    requires javafx.swing;
     requires org.joml;
     requires java.desktop;
 

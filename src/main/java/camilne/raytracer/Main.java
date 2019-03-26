@@ -2,15 +2,12 @@ package camilne.raytracer;
 
 import org.joml.Vector3f;
 
-import javax.imageio.ImageIO;
-import java.awt.image.*;
 import java.io.File;
 import java.io.IOException;
 
 public class Main {
 
     private static final String IMAGE_PATH = "render.png";
-    private static final String IMAGE_FORMAT = "png";
 
     public static void main(String[] args) throws IOException {
         final var raytracer = new Raytracer();
@@ -48,13 +45,13 @@ public class Main {
         renderOptions.aa = 2;
 
         final var startTime = System.nanoTime();
-        final var result = (BufferedImage) raytracer.trace(renderOptions);
+        final var result = raytracer.trace(renderOptions);
         final var endTime = System.nanoTime();
 
         System.out.printf("Render took %.3f seconds\n", (endTime - startTime) / 1e9);
 
         final var resultFile = new File(IMAGE_PATH);
-        ImageIO.write(result, IMAGE_FORMAT, resultFile);
+        result.save(resultFile);
 
         System.out.println("Saved image as " + IMAGE_PATH);
     }
