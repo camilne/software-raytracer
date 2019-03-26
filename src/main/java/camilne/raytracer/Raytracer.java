@@ -3,11 +3,11 @@ package camilne.raytracer;
 import org.joml.Vector3f;
 import org.joml.Vector3fc;
 
-import java.awt.image.*;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 public class Raytracer {
 
@@ -35,17 +35,16 @@ public class Raytracer {
         final var aspectRatio = (float) options.width / options.height;
         final var scale = (float) Math.tan(FOV * Math.PI / 360);
 
+        final List<Callable<Void>> tasks = new ArrayList<>();
         for (var j = 0; j < options.height; j++) {
-            submit(j, aspectRatio, scale, options);
+            tasks.add(submit(j, aspectRatio, scale, options));
         }
 
-        // Wait for the tasks to finish rendering.
-        executors.shutdown();
         try {
-            executors.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+            executors.invokeAll(tasks);
         }
         catch (InterruptedException e) {
-            e.printStackTrace();
+            System.out.println("Rendering interrupted");
         }
 
         return options.target;
@@ -55,8 +54,8 @@ public class Raytracer {
         executors.shutdownNow();
     }
 
-    private void submit(int j, float aspectRatio, float scale, RenderOptions options) {
-        executors.submit(() -> {
+    private Callable<Void> submit(int j, float aspectRatio, float scale, RenderOptions options) {
+        return () -> {
             final var rowColors = new Color[options.width];
             for (var i = 0; i < options.width; i++) {
                 final var colors = new ArrayList<Color>();
@@ -88,7 +87,8 @@ public class Raytracer {
                 rowColors[i] = finalColor;
             }
             options.target.writeRegion(0, j, options.width, 1, rowColors);
-        });
+            return null;
+        };
     }
 
     private Color trace(Ray ray, Scene scene, Camera camera, int depth) {

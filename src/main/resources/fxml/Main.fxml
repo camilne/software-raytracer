@@ -15,9 +15,6 @@
 <?import javafx.scene.layout.RowConstraints?>
 
 <BorderPane xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="camilne.raytracer.gui.MainController">
-   <right>
-      <ImageView fx:id="targetView" fitHeight="512.0" fitWidth="512.0" pickOnBounds="true" preserveRatio="true" BorderPane.alignment="CENTER" />
-   </right>
    <left>
       <GridPane hgap="5.0" vgap="5.0">
         <columnConstraints>
@@ -61,4 +58,7 @@
         </menus>
       </MenuBar>
    </top>
+   <center>
+      <ImageView fx:id="targetView" fitHeight="512.0" fitWidth="512.0" pickOnBounds="true" preserveRatio="true" BorderPane.alignment="CENTER" />
+   </center>
 </BorderPane>

@@ -31,6 +31,7 @@ public class MainController {
     private ImageView targetView;
 
     private Raytracer raytracer;
+    private Thread raytracingThread;
 
     public MainController() {
         raytracer = new Raytracer();
@@ -46,11 +47,14 @@ public class MainController {
             return null;
         };
 
-        widthInput.setTextFormatter(new TextFormatter<>(new IntegerStringConverter(), 0, integerFilter));
-        heightInput.setTextFormatter(new TextFormatter<>(new IntegerStringConverter(), 0, integerFilter));
+        widthInput.setTextFormatter(new TextFormatter<>(integerFilter));
+        heightInput.setTextFormatter(new TextFormatter<>(integerFilter));
     }
 
     public void shutdown() {
+        if (raytracingThread != null && raytracingThread.isAlive()) {
+            raytracingThread.interrupt();
+        }
         raytracer.cancel();
     }
 
@@ -63,6 +67,7 @@ public class MainController {
             alert.setTitle("Invalid input");
             alert.setHeaderText("Invalid input");
             alert.setContentText(e.getMessage());
+            alert.showAndWait();
             return;
         }
 
@@ -101,22 +106,27 @@ public class MainController {
         renderOptions.aa = MathUtil.clamp((int) aaSlider.getValue(), 0, 16);
 
         renderButton.setDisable(true);
-        new Thread(() -> {
+        raytracingThread = new Thread(() -> {
             raytracer.trace(renderOptions);
             Platform.runLater(() -> {
                 renderButton.setDisable(false);
             });
-        }).start();
+        });
+        raytracingThread.start();
     }
 
     private void validateInput() throws InvalidInputException {
+        validateInteger("width", widthInput, MIN_WIDTH, MAX_WIDTH);
+        validateInteger("height", heightInput, MIN_HEIGHT, MAX_HEIGHT);
+    }
+
+    private void validateInteger(String name, TextField field, int min, int max) throws InvalidInputException {
         try {
-            final var width = Integer.parseInt(widthInput.getText());
-            widthInput.setText(String.valueOf(MathUtil.clamp(width, MIN_WIDTH, MAX_WIDTH)));
-            final var height = Integer.parseInt(heightInput.getText());
-            heightInput.setText(String.valueOf(MathUtil.clamp(height, MIN_HEIGHT, MAX_HEIGHT)));
+            final var value = Integer.parseInt(field.getText());
+            field.setText(String.valueOf(MathUtil.clamp(value, min, max)));
+
         } catch (NumberFormatException e) {
-            throw new InvalidInputException("Either width or height is not a valid integer");
+            throw new InvalidInputException(String.format("%s must be an integer between %d and %d", name, min, max));
         }
     }
 
